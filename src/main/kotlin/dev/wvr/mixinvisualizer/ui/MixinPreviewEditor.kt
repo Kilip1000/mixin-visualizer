@@ -12,8 +12,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiTreeChangeAdapter
+import com.intellij.psi.PsiTreeChangeEvent
 import com.intellij.ui.components.JBLoadingPanel
 import dev.wvr.mixinvisualizer.lang.BytecodeFileType
+import dev.wvr.mixinvisualizer.logic.MixinCompilationTopic
 import dev.wvr.mixinvisualizer.logic.MixinProcessor
 import java.awt.BorderLayout
 import java.beans.PropertyChangeListener
@@ -38,13 +41,22 @@ class MixinPreviewEditor(
         panel.add(createToolbar(), BorderLayout.NORTH)
         panel.add(loadingPanel, BorderLayout.CENTER)
 
-        PsiManager.getInstance(project).addPsiTreeChangeListener(object : com.intellij.psi.PsiTreeChangeAdapter() {
-            override fun childrenChanged(event: com.intellij.psi.PsiTreeChangeEvent) {
+        PsiManager.getInstance(project).addPsiTreeChangeListener(object : PsiTreeChangeAdapter() {
+            override fun childrenChanged(event: PsiTreeChangeEvent) {
                 if (event.file?.virtualFile == file) {
                     refresh()
                 }
             }
         }, this)
+
+        val connection = project.messageBus.connect(this)
+        connection.subscribe(MixinCompilationTopic.TOPIC, object : MixinCompilationTopic {
+            override fun onCompilationFinished() {
+                ApplicationManager.getApplication().invokeLater {
+                    refresh()
+                }
+            }
+        })
 
         refresh()
     }

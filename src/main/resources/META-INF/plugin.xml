@@ -16,5 +16,13 @@
 
         <fileType name="JVM Bytecode" implementationClass="dev.wvr.mixinvisualizer.lang.BytecodeFileType" fieldName="INSTANCE" language="JVM Bytecode" extensions="jvm"/>
         <lang.syntaxHighlighterFactory language="JVM Bytecode" implementationClass="dev.wvr.mixinvisualizer.lang.BytecodeSyntaxHighlighterFactory"/>
+
+
+        <applicationService serviceImplementation="dev.wvr.mixinvisualizer.settings.MixinVisualizerSettings"/>
+        <applicationConfigurable instance="dev.wvr.mixinvisualizer.settings.MixinVisualizerConfigurable"
+                                 id="dev.wvr.mixinvisualizer.settings.MixinVisualizerConfigurable"
+                                 displayName="Mixin Visualizer"/>
+
+        <fileDocumentManagerListener implementation="dev.wvr.mixinvisualizer.logic.AutoCompileListener"/>
     </extensions>
 </idea-plugin>
