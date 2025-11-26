@@ -38,7 +38,7 @@ The project is a Work In Progress, with the following planned features:
 - [x] **Auto compile and refresh on file save** (maybe settings to control this behavior)
 - [x] **Syntax highlighting for bytecode/decompiler view**
 - [x] **Handle @Accessor and @Invoker**
-- [ ] **Fix variable names**
+- [x] **Fix variable names**
 - [ ] **Add mixin builder**
 
 ## Tested on:

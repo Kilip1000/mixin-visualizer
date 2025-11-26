@@ -112,7 +112,8 @@ object BytecodeUtils {
             "ind" to "    ", // 4 spaces
             "bto" to "1",    // bytecode-to-object only (memory)
             "nco" to "1",    // pattern matching instanceOf (cleaner code)
-            "hdc" to "0"     // hide empty default constructor
+            "hdc" to "0",     // hide empty default constructor
+            "udv" to "1"
         )
 
         val fernflower = Fernflower(provider, saver, options, logger)

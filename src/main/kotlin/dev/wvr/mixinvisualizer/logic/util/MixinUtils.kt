@@ -151,7 +151,7 @@ object CodeGenerationUtils {
         }
 
         AsmHelper.remapMemberAccess(code, mixinName, targetName)
-        remapLocalVariables(code, source, targetMethod, offset)
+        remapLocalVariables(code, source, targetMethod, offset, labelMap)
 
         AsmHelper.cleanupReturnInstruction(code, !isRedirect)
 
@@ -277,7 +277,13 @@ object CodeGenerationUtils {
         }
     }
 
-    private fun remapLocalVariables(insns: InsnList, source: MethodNode, target: MethodNode, offset: Int) {
+    private fun remapLocalVariables(
+        insns: InsnList,
+        source: MethodNode,
+        target: MethodNode,
+        offset: Int,
+        labelMap: Map<LabelNode, LabelNode>
+    ) {
         val targetArgSlotLimit = AsmHelper.getArgsSize(target)
         val iter = insns.iterator()
         while (iter.hasNext()) {
@@ -289,6 +295,25 @@ object CodeGenerationUtils {
             } else if (insn is IincInsnNode) {
                 if (insn.`var` >= targetArgSlotLimit) {
                     insn.`var` += offset
+                }
+            }
+        }
+
+        if (source.localVariables != null) {
+            if (target.localVariables == null) {
+                target.localVariables = ArrayList()
+            }
+            for (lvn in source.localVariables) {
+                val newStart = labelMap[lvn.start]
+                val newEnd = labelMap[lvn.end]
+                if (newStart != null && newEnd != null) {
+                    var newIndex = lvn.index
+                    if (newIndex >= targetArgSlotLimit) {
+                        newIndex += offset
+                    }
+                    target.localVariables.add(
+                        LocalVariableNode(lvn.name, lvn.desc, lvn.signature, newStart, newEnd, newIndex)
+                    )
                 }
             }
         }
