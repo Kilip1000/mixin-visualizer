@@ -89,7 +89,13 @@ object BytecodeUtils {
 
             override fun closeArchive(path: String, archiveName: String) {}
 
-            override fun saveClassFile(path: String, qualifiedName: String, entryName: String, content: String, mapping: IntArray?) {
+            override fun saveClassFile(
+                path: String,
+                qualifiedName: String,
+                entryName: String,
+                content: String,
+                mapping: IntArray?
+            ) {
                 result = content
             }
         }

@@ -1,10 +1,10 @@
 package dev.wvr.mixinvisualizer.settings
 
 import com.intellij.openapi.options.Configurable
+import java.awt.BorderLayout
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 import javax.swing.JPanel
-import java.awt.BorderLayout
 
 class MixinVisualizerConfigurable : Configurable {
     private var autoCompileCheckbox: JCheckBox? = null

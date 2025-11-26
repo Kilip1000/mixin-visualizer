@@ -65,7 +65,13 @@ object CodeGenerationUtils {
     private const val CALLBACK_INFO = "org/spongepowered/asm/mixin/injection/callback/CallbackInfo"
     private const val CALLBACK_INFO_RETURNABLE = "org/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable"
 
-    fun prepareCode(source: MethodNode, mixinName: String, targetName: String, targetMethod: MethodNode, isRedirect: Boolean): InsnList {
+    fun prepareCode(
+        source: MethodNode,
+        mixinName: String,
+        targetName: String,
+        targetMethod: MethodNode,
+        isRedirect: Boolean
+    ): InsnList {
         val code = AsmHelper.cloneInstructions(source.instructions)
         val offset = targetMethod.maxLocals + 5
 

@@ -1,16 +1,19 @@
 package dev.wvr.mixinvisualizer.logic.handlers
 
-import dev.wvr.mixinvisualizer.logic.util.*
-import org.objectweb.asm.tree.AnnotationNode
-import org.objectweb.asm.tree.ClassNode
-import org.objectweb.asm.tree.FieldInsnNode
-import org.objectweb.asm.tree.MethodInsnNode
-import org.objectweb.asm.tree.MethodNode
+import dev.wvr.mixinvisualizer.logic.util.AnnotationUtils
+import dev.wvr.mixinvisualizer.logic.util.CodeGenerationUtils
+import dev.wvr.mixinvisualizer.logic.util.TargetFinderUtils
+import org.objectweb.asm.tree.*
 
 class RedirectHandler : MixinHandler {
     override fun canHandle(annotationDesc: String): Boolean = annotationDesc.contains("Redirect")
 
-    override fun handle(targetClass: ClassNode, mixinClass: ClassNode, sourceMethod: MethodNode, annotation: AnnotationNode) {
+    override fun handle(
+        targetClass: ClassNode,
+        mixinClass: ClassNode,
+        sourceMethod: MethodNode,
+        annotation: AnnotationNode
+    ) {
         val targets = AnnotationUtils.getListValue(annotation, "method")
         val atTarget = AnnotationUtils.getAtValue(annotation, "target")
 
@@ -29,7 +32,13 @@ class RedirectHandler : MixinHandler {
                 }
 
                 if (match) {
-                    val injectionCode = CodeGenerationUtils.prepareCode(sourceMethod, mixinClass.name, targetClass.name, targetMethod, isRedirect = true)
+                    val injectionCode = CodeGenerationUtils.prepareCode(
+                        sourceMethod,
+                        mixinClass.name,
+                        targetClass.name,
+                        targetMethod,
+                        isRedirect = true
+                    )
                     targetMethod.instructions.insertBefore(insn, injectionCode)
                     targetMethod.instructions.remove(insn)
                 }

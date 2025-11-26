@@ -7,7 +7,9 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.*
+import com.intellij.openapi.fileEditor.FileEditor
+import com.intellij.openapi.fileEditor.FileEditorState
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -22,7 +24,6 @@ import java.awt.BorderLayout
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 import javax.swing.JPanel
-import com.intellij.openapi.project.DumbService
 
 class MixinPreviewEditor(
     private val project: Project,
@@ -69,7 +70,8 @@ class MixinPreviewEditor(
             override fun actionPerformed(e: AnActionEvent) = refresh()
         }
 
-        val toggleAction = object : ToggleAction("Show Bytecode", "Toggle between Java and ASM Bytecode view", AllIcons.FileTypes.JavaClass) {
+        val toggleAction = object :
+            ToggleAction("Show Bytecode", "Toggle between Java and ASM Bytecode view", AllIcons.FileTypes.JavaClass) {
             override fun isSelected(e: AnActionEvent) = showBytecode
             override fun setSelected(e: AnActionEvent, state: Boolean) {
                 showBytecode = state
@@ -130,7 +132,10 @@ class MixinPreviewEditor(
     override fun removePropertyChangeListener(l: PropertyChangeListener) {}
     override fun getCurrentLocation() = null
     override fun getBackgroundHighlighter() = null
-    override fun dispose() { Disposer.dispose(diffPanel) }
+    override fun dispose() {
+        Disposer.dispose(diffPanel)
+    }
+
     override fun <T> getUserData(key: com.intellij.openapi.util.Key<T>) = null
     override fun <T> putUserData(key: com.intellij.openapi.util.Key<T>, v: T?) {}
 }

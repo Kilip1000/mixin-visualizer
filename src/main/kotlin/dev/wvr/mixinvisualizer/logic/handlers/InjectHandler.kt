@@ -1,7 +1,9 @@
 package dev.wvr.mixinvisualizer.logic.handlers
 
 import dev.wvr.mixinvisualizer.logic.asm.AsmHelper
-import dev.wvr.mixinvisualizer.logic.util.*
+import dev.wvr.mixinvisualizer.logic.util.AnnotationUtils
+import dev.wvr.mixinvisualizer.logic.util.CodeGenerationUtils
+import dev.wvr.mixinvisualizer.logic.util.TargetFinderUtils
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.AnnotationNode
 import org.objectweb.asm.tree.ClassNode
@@ -11,7 +13,12 @@ import org.objectweb.asm.tree.MethodNode
 class InjectHandler : MixinHandler {
     override fun canHandle(annotationDesc: String): Boolean = annotationDesc.contains("Inject")
 
-    override fun handle(targetClass: ClassNode, mixinClass: ClassNode, sourceMethod: MethodNode, annotation: AnnotationNode) {
+    override fun handle(
+        targetClass: ClassNode,
+        mixinClass: ClassNode,
+        sourceMethod: MethodNode,
+        annotation: AnnotationNode
+    ) {
         val targets = AnnotationUtils.getListValue(annotation, "method")
         var atValue = AnnotationUtils.getAtValue(annotation, "value")
         val atTarget = AnnotationUtils.getAtValue(annotation, "target")
@@ -20,12 +27,19 @@ class InjectHandler : MixinHandler {
 
         for (ref in targets) {
             val targetMethod = TargetFinderUtils.findTargetMethodLike(targetClass, ref) ?: continue
-            val injectionCode = CodeGenerationUtils.prepareCode(sourceMethod, mixinClass.name, targetClass.name, targetMethod, isRedirect = false)
+            val injectionCode = CodeGenerationUtils.prepareCode(
+                sourceMethod,
+                mixinClass.name,
+                targetClass.name,
+                targetMethod,
+                isRedirect = false
+            )
 
             when (atValue) {
                 "HEAD" -> {
                     targetMethod.instructions.insert(injectionCode)
                 }
+
                 "TAIL", "RETURN" -> {
                     val iter = targetMethod.instructions.iterator()
                     while (iter.hasNext()) {
@@ -35,6 +49,7 @@ class InjectHandler : MixinHandler {
                         }
                     }
                 }
+
                 "INVOKE" -> {
                     if (atTarget.isNotEmpty()) {
                         val shift = AnnotationUtils.getAtValue(annotation, "shift")

@@ -2,8 +2,8 @@ package dev.wvr.mixinvisualizer.lang
 
 import com.intellij.lexer.Lexer
 import com.intellij.lexer.LexerPosition
-import com.intellij.psi.tree.IElementType
 import com.intellij.psi.TokenType
+import com.intellij.psi.tree.IElementType
 
 class BytecodeLexer : Lexer() {
     private var buffer: CharSequence = ""
@@ -119,6 +119,7 @@ class BytecodeLexer : Lexer() {
         override fun getOffset() = currentTokenStart
         override fun getState() = currentState
     }
+
     override fun restore(position: LexerPosition) {
         start(buffer, position.offset, endOffset, position.state)
     }

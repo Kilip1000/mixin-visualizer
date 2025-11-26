@@ -14,11 +14,16 @@ import com.intellij.psi.PsiMethod
 class MixinLineMarkerProvider : LineMarkerProvider {
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
         if (element !is PsiIdentifier) return null
-        val parent = element.parent
-
-        val tooltip = when (parent) {
+        val tooltip = when (val parent = element.parent) {
             is PsiClass -> if (hasAnnotation(parent, "Mixin")) "Preview Mixin Result" else null
-            is PsiMethod -> if (hasAnnotation(parent, "Inject", "Redirect", "Overwrite")) "Show in Mixin Visualizer" else null
+            is PsiMethod -> if (hasAnnotation(
+                    parent,
+                    "Inject",
+                    "Redirect",
+                    "Overwrite"
+                )
+            ) "Show in Mixin Visualizer" else null
+
             else -> null
         } ?: return null
 

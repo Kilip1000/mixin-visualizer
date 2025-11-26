@@ -23,11 +23,13 @@ class AutoCompileListener : FileDocumentManagerListener {
             if (module != null) {
                 ApplicationManager.getApplication().invokeLater {
                     if (!project.isDisposed) {
-                        CompilerManager.getInstance(project).compile(module, CompileStatusNotification { aborted, errors, _, _ ->
-                            if (!aborted && errors == 0) {
-                                project.messageBus.syncPublisher(MixinCompilationTopic.TOPIC).onCompilationFinished()
-                            }
-                        })
+                        CompilerManager.getInstance(project)
+                            .compile(module, CompileStatusNotification { aborted, errors, _, _ ->
+                                if (!aborted && errors == 0) {
+                                    project.messageBus.syncPublisher(MixinCompilationTopic.TOPIC)
+                                        .onCompilationFinished()
+                                }
+                            })
                     }
                 }
                 break

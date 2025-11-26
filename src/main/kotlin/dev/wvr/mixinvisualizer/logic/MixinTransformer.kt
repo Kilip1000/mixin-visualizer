@@ -17,7 +17,15 @@ class MixinTransformer {
 
     fun transform(target: ClassNode, mixin: ClassNode) {
         if (target.fields.none { it.name == "__mixin_fields_here__" }) {
-            target.fields.add(FieldNode(Opcodes.ACC_PUBLIC, "__mixin_fields_here__", "Ljava/lang/String;", null, "Applied: ${mixin.name}"))
+            target.fields.add(
+                FieldNode(
+                    Opcodes.ACC_PUBLIC,
+                    "__mixin_fields_here__",
+                    "Ljava/lang/String;",
+                    null,
+                    "Applied: ${mixin.name}"
+                )
+            )
         }
 
         mergeUniqueMembers(target, mixin)
@@ -98,7 +106,13 @@ class MixinTransformer {
 
             if (!isHandler && method.name != "<init>" && method.name != "<clinit>") {
                 if (target.methods.none { it.name == method.name && it.desc == method.desc }) {
-                    val newMethod = MethodNode((method.access and Opcodes.ACC_PRIVATE.inv()) or Opcodes.ACC_PUBLIC, method.name, method.desc, method.signature, method.exceptions?.toTypedArray())
+                    val newMethod = MethodNode(
+                        (method.access and Opcodes.ACC_PRIVATE.inv()) or Opcodes.ACC_PUBLIC,
+                        method.name,
+                        method.desc,
+                        method.signature,
+                        method.exceptions?.toTypedArray()
+                    )
                     method.accept(newMethod)
                     AsmHelper.remapMemberAccess(newMethod.instructions, mixin.name, target.name)
                     target.methods.add(newMethod)
