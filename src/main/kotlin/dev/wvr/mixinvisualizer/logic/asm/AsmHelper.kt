@@ -42,10 +42,11 @@ object AsmHelper {
         list.add(endLabel)
         var last = list.first
         while (last != null) {
+            val next = last.next
             if (last.opcode in Opcodes.IRETURN..Opcodes.RETURN) {
                 list.set(last, JumpInsnNode(Opcodes.GOTO, endLabel))
             }
-            last = last.next
+            last = next
         }
     }
 
