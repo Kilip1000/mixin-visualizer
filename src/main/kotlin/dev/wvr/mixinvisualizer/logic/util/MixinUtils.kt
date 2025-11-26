@@ -144,6 +144,8 @@ object CodeGenerationUtils {
             code.insert(stubInit)
         }
 
+        AsmHelper.cleanupReturnInstruction(code, !isRedirect)
+
         try {
             val ciIndex = findCallbackInfoVarIndex(source)
             processCallbackInfo(code, Type.getReturnType(targetMethod.desc), ciIndex)
@@ -152,8 +154,6 @@ object CodeGenerationUtils {
 
         AsmHelper.remapMemberAccess(code, mixinName, targetName)
         remapLocalVariables(code, source, targetMethod, offset, labelMap)
-
-        AsmHelper.cleanupReturnInstruction(code, !isRedirect)
 
         return GeneratedCode(code, tryCatchBlocks)
     }
@@ -184,8 +184,21 @@ object CodeGenerationUtils {
     private fun handleMethodCall(insns: InsnList, insn: MethodInsnNode, targetReturnType: Type, ciVarIndex: Int) {
         if (insn.owner == CALLBACK_INFO && insn.name == "cancel" && insn.desc == "()V") {
             removeCiLoadAndCall(insns, insn, ciVarIndex)
-            insns.insertBefore(insn, InsnNode(Opcodes.RETURN))
+
+            if (targetReturnType.sort != Type.VOID) {
+                val nullInsn = when (targetReturnType.sort) {
+                    Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> InsnNode(Opcodes.ICONST_0)
+                    Type.FLOAT -> InsnNode(Opcodes.FCONST_0)
+                    Type.LONG -> InsnNode(Opcodes.LCONST_0)
+                    Type.DOUBLE -> InsnNode(Opcodes.DCONST_0)
+                    else -> InsnNode(Opcodes.ACONST_NULL)
+                }
+                insns.insertBefore(insn, nullInsn)
+            }
+
+            insns.insertBefore(insn, InsnNode(targetReturnType.getOpcode(Opcodes.IRETURN)))
             insns.remove(insn)
+
         } else if (insn.owner == CALLBACK_INFO_RETURNABLE && insn.name == "setReturnValue") {
             val args = Type.getArgumentTypes(insn.desc)
             if (args.isNotEmpty()) {
