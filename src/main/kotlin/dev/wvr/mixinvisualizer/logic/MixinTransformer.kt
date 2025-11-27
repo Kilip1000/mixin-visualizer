@@ -11,6 +11,10 @@ class MixinTransformer {
         OverwriteHandler(),
         RedirectHandler(),
 
+        ModifyArgHandler(),
+        ModifyConstantHandler(),
+        ModifyVariableHandler(),
+
         AccessorHandler(),
         InvokerHandler()
     )

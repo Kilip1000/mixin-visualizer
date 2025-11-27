@@ -333,3 +333,49 @@ object CodeGenerationUtils {
         target.maxLocals += (source.maxLocals + 20)
     }
 }
+
+object SliceHelper {
+    fun getSliceRange(
+        targetClass: ClassNode,
+        targetMethod: MethodNode,
+        annotationNode: AnnotationNode
+    ): Pair<AbstractInsnNode?, AbstractInsnNode?> {
+        val sliceList = AnnotationUtils.getListValue(annotationNode, "slice")
+        val sliceNode = if (sliceList.isNotEmpty()) {
+            sliceList.firstOrNull() as? AnnotationNode
+        } else {
+            null
+        } ?: return targetMethod.instructions.first to targetMethod.instructions.last
+
+        val fromAnnotation = AnnotationUtils.getValue(sliceNode, "from") as? AnnotationNode
+        val toAnnotation = AnnotationUtils.getValue(sliceNode, "to") as? AnnotationNode
+
+        val startNode = if (fromAnnotation != null) findSelector(targetClass, targetMethod, fromAnnotation) else null
+        val endNode = if (toAnnotation != null) findSelector(targetClass, targetMethod, toAnnotation) else null
+
+        return startNode to endNode
+    }
+
+    private fun findSelector(
+        owner: ClassNode,
+        method: MethodNode,
+        at: AnnotationNode
+    ): AbstractInsnNode? {
+        val value = AnnotationUtils.getValue(at, "value")
+        val target = AnnotationUtils.getValue(at, "target")
+
+        val iter = method.instructions.iterator()
+        while (iter.hasNext()) {
+            val insn = iter.next()
+            when (value) {
+                "HEAD" -> return method.instructions.first
+                "RETURN", "TAIL" -> if (insn.opcode in Opcodes.IRETURN..Opcodes.RETURN) {
+                    return insn
+                }
+                "INVOKE" -> if (insn is MethodInsnNode && TargetFinderUtils.isMatch(insn, target as String)) return insn
+            }
+        }
+
+        return null
+    }
+}

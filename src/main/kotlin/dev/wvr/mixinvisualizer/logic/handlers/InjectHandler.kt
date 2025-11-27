@@ -3,6 +3,7 @@ package dev.wvr.mixinvisualizer.logic.handlers
 import dev.wvr.mixinvisualizer.logic.asm.AsmHelper
 import dev.wvr.mixinvisualizer.logic.util.AnnotationUtils
 import dev.wvr.mixinvisualizer.logic.util.CodeGenerationUtils
+import dev.wvr.mixinvisualizer.logic.util.SliceHelper
 import dev.wvr.mixinvisualizer.logic.util.TargetFinderUtils
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.*
@@ -24,6 +25,8 @@ class InjectHandler : MixinHandler {
 
         for (ref in targets) {
             val targetMethod = TargetFinderUtils.findTargetMethodLike(targetClass, ref) ?: continue
+            val (startNode, endNode) = SliceHelper.getSliceRange(targetClass, targetMethod, annotation)
+
             val injectionData = CodeGenerationUtils.prepareCode(
                 sourceMethod,
                 mixinClass.name,
