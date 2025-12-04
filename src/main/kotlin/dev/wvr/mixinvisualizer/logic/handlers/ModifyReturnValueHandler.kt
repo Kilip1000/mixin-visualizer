@@ -1,6 +1,5 @@
 package dev.wvr.mixinvisualizer.logic.handlers
 
-import com.demonwav.mcdev.platform.mixin.util.getParameter
 import dev.wvr.mixinvisualizer.logic.asm.AsmHelper
 import dev.wvr.mixinvisualizer.logic.util.AnnotationUtils
 import dev.wvr.mixinvisualizer.logic.util.CodeGenerationUtils
@@ -8,7 +7,6 @@ import dev.wvr.mixinvisualizer.logic.util.SliceHelper
 import dev.wvr.mixinvisualizer.logic.util.TargetFinderUtils
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.*
-import org.objectweb.asm.Type
 
 class ModifyReturnValueHandler : MixinHandler {
     override fun canHandle(annotationDesc: String): Boolean = annotationDesc.contains("ModifyReturnValue")
@@ -41,54 +39,44 @@ class ModifyReturnValueHandler : MixinHandler {
                     while (iter.hasNext()) {
                         val insn = iter.next()
                         if (insn.opcode in Opcodes.IRETURN..Opcodes.RETURN) {
+                            val returnInstruction = insn
                             val lvIndex = targetMethod.maxLocals
-                            targetMethod.maxLocals += 1
+                            targetMethod.maxLocals += sourceMethod.maxLocals
 
-                            val list = InsnList()
+
+                            val returnValueStoreAndLoader = InsnList()
 
                             //store old returnvalue
-                            when (insn.opcode) {
-                                Opcodes.IRETURN -> list.add(VarInsnNode(Opcodes.ISTORE, lvIndex))
-                                Opcodes.LRETURN -> list.add(VarInsnNode(Opcodes.LSTORE, lvIndex))
-                                Opcodes.FRETURN -> list.add(VarInsnNode(Opcodes.FSTORE, lvIndex))
-                                Opcodes.DRETURN -> list.add(VarInsnNode(Opcodes.DSTORE, lvIndex))
-                                Opcodes.ARETURN -> list.add(VarInsnNode(Opcodes.ASTORE, lvIndex))
+                            when (returnInstruction.opcode) {
+                                Opcodes.IRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.ISTORE, lvIndex))
+                                Opcodes.LRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.LSTORE, lvIndex))
+                                Opcodes.FRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.FSTORE, lvIndex))
+                                Opcodes.DRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.DSTORE, lvIndex))
+                                Opcodes.ARETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.ASTORE, lvIndex))
                             }
 
                             //also load this on stack
-                            list.add(VarInsnNode(Opcodes.ALOAD, 0))
+                            returnValueStoreAndLoader.add(VarInsnNode(Opcodes.ALOAD, 0))
+
 
                             //find returnvalue to be able to assign a variable
-                            when (insn.opcode) {
-                                Opcodes.IRETURN -> list.add(VarInsnNode(Opcodes.ILOAD, lvIndex))
-                                Opcodes.LRETURN -> list.add(VarInsnNode(Opcodes.LLOAD, lvIndex))
-                                Opcodes.FRETURN -> list.add(VarInsnNode(Opcodes.FLOAD, lvIndex))
-                                Opcodes.DRETURN -> list.add(VarInsnNode(Opcodes.DLOAD, lvIndex))
-                                Opcodes.ARETURN -> list.add(VarInsnNode(Opcodes.ALOAD, lvIndex))
+                            when (returnInstruction.opcode) {
+                                Opcodes.IRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.ILOAD, lvIndex))
+                                Opcodes.LRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.LLOAD, lvIndex))
+                                Opcodes.FRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.FLOAD, lvIndex))
+                                Opcodes.DRETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.DLOAD, lvIndex))
+                                Opcodes.ARETURN -> returnValueStoreAndLoader.add(VarInsnNode(Opcodes.ALOAD, lvIndex))
                             }
 
 
-                            targetMethod.instructions.insertBefore(insn, list)
+                            targetMethod.instructions.insertBefore(returnInstruction, returnValueStoreAndLoader)
 
-                            val iteratorius = sourceMethod.instructions.iterator()
-                            while(iteratorius.hasNext())
-                            {
+                            val map = HashMap<LabelNode, LabelNode>()
+                            val code = cloneInstructions(injectionData.instructions, map)
+                            val tcbs = AsmHelper.cloneTryCatchBlocks(injectionData.tryCatchBlocks, map)
 
-                                println(iteratorius.next().opcode)
-                                targetMethod.instructions.insertBefore(insn,iteratorius.next())
-                            }
-
-                            //return based on type
-                            val e = InsnList()
-                            e.add(when (insn.opcode) {
-                                Opcodes.IRETURN -> InsnNode(Opcodes.IRETURN)
-                                Opcodes.LRETURN -> InsnNode(Opcodes.LRETURN)
-                                Opcodes.FRETURN -> InsnNode(Opcodes.FRETURN)
-                                Opcodes.DRETURN -> InsnNode(Opcodes.DRETURN)
-                                Opcodes.ARETURN -> InsnNode(Opcodes.ARETURN)
-                                else -> throw IllegalStateException("Unexpected return opcode ${insn.opcode}")
-                            })
-                            targetMethod.instructions.insertBefore(insn, list)
+                            targetMethod.instructions.insertBefore(insn, code)
+                            targetMethod.tryCatchBlocks.addAll(tcbs)
                         }
                     }
                 }
@@ -96,5 +84,28 @@ class ModifyReturnValueHandler : MixinHandler {
 
 
         }
+    }
+
+
+    fun cloneInstructions(list: InsnList, map: MutableMap<LabelNode, LabelNode>? = null): InsnList {
+        val clone = InsnList()
+        val labels = map ?: mutableMapOf()
+
+        var p = list.first
+        while (p != null) {
+            if (p is LabelNode) {
+                if (!labels.containsKey(p)) {
+                    labels[p] = LabelNode()
+                }
+            }
+            p = p.next
+        }
+
+        p = list.first
+        while (p != null) {
+            clone.add(p.clone(labels))
+            p = p.next
+        }
+        return clone
     }
 }
